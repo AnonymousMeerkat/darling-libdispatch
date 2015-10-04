@@ -746,14 +746,14 @@ _dispatch_futex_dispose(dispatch_futex_t *dfx)
 int
 _dispatch_futex_signal(dispatch_futex_t *dfx)
 {
-	uint64_t orig = dispatch_atomic_load2o(dfx, dfx_data, relaxed);
+	uint64_t orig;
 	do {
+		orig = dfx->dfx_data;
 		if (slowpath((orig & DISPATCH_FUTEX_VALUE_MASK) ==
 					 DISPATCH_FUTEX_VALUE_MAX)) {
 			DISPATCH_CRASH("semaphore overflow");
 		}
-	} while (!dispatch_atomic_cmpxchgvw2o(dfx, dfx_data, orig, orig + 1, &orig,
-										  release));
+	} while (!dispatch_atomic_cmpxchg2o(dfx, dfx_data, orig, orig + 1));
 	if (slowpath(orig >> DISPATCH_FUTEX_NWAITERS_SHIFT)) {
 		int ret = _dispatch_futex_syscall(dfx, FUTEX_WAKE, 1, NULL);
 		DISPATCH_SEMAPHORE_VERIFY_RET(ret);
@@ -776,10 +776,9 @@ _dispatch_futex_wait(dispatch_futex_t *dfx, const struct timespec *timeout)
 int
 _dispatch_futex_trywait(dispatch_futex_t *dfx)
 {
-	uint64_t orig = dispatch_atomic_load2o(dfx, dfx_data, relaxed);
-	while (orig & DISPATCH_FUTEX_VALUE_MASK) {
-		if (dispatch_atomic_cmpxchgvw2o(dfx, dfx_data, orig, orig - 1, &orig,
-										acquire)) {
+	uint64_t orig;
+	while ((orig = dfx->dfx_data) & DISPATCH_FUTEX_VALUE_MASK) {
+		if (dispatch_atomic_cmpxchg2o(dfx, dfx_data, orig, orig - 1)) {
 			return 0;
 		}
 	}
@@ -792,15 +791,15 @@ _dispatch_futex_wait_slow(dispatch_futex_t *dfx, const struct timespec *timeout)
 {
 	int spins = DISPATCH_FUTEX_NUM_SPINS;
 	// Spin for a short time (if there are no waiters).
-	while (spins-- && !dispatch_atomic_load2o(dfx, dfx_data, relaxed)) {
-		dispatch_hardware_pause();
+	while (spins-- && !dfx->dfx_data) {
+		_dispatch_hardware_pause();
 	}
 	while (_dispatch_futex_trywait(dfx)) {
-		dispatch_atomic_add2o(
-				dfx, dfx_data, 1ull << DISPATCH_FUTEX_NWAITERS_SHIFT, relaxed);
+		dispatch_atomic_add2o(dfx, dfx_data,
+							  1ull << DISPATCH_FUTEX_NWAITERS_SHIFT);
 		int ret = _dispatch_futex_syscall(dfx, FUTEX_WAIT, 0, timeout);
-		dispatch_atomic_sub2o(
-				dfx, dfx_data, 1ull << DISPATCH_FUTEX_NWAITERS_SHIFT, relaxed);
+		dispatch_atomic_sub2o(dfx, dfx_data,
+							  1ull << DISPATCH_FUTEX_NWAITERS_SHIFT);
 		switch (ret == -1 ? errno : 0) {
 		case EWOULDBLOCK:
 			if (!timeout) {
