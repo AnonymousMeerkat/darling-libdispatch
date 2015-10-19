@@ -1,107 +1,80 @@
-cmake_minimum_required(VERSION 2.8.7)
+cmake_minimum_required(VERSION 2.8.8)
 
 project (dispatch)
-set (DISPATCH_VERSION 0.1.3.1)
-set (DISPATCH_ABI_VERSION 1)
+set (dispatch_VERSION "1.2")
 
 list (APPEND CMAKE_MODULE_PATH "${dispatch_SOURCE_DIR}/cmake")
-include (BuildUtil)
 
-include (CheckCCompilerFlag)
-include (CheckCSourceCompiles)
-include (CMakePushCheckState)
-
-#///////////////////////////////////////////////////////////////////////////////
-if (NOT CMAKE_BUILD_TYPE)
-    set (CMAKE_BUILD_TYPE MinSizeRel)
+if (CMAKE_SYSTEM_NAME MATCHES "Linux")
+  add_definitions(-D_GNU_SOURCE)
 endif ()
 
-#///////////////////////////////////////////////////////////////////////////////
-option (DISPATCH_ENABLE_TEST_SUITE "Whether to build the test suite" NO)
+include_directories("${CMAKE_CURRENT_BINARY_DIR}/src")
+include_directories("${DARLING_TOP_DIRECTORY}/libc/include")
+include_directories("${DARLING_TOP_DIRECTORY}/libc/pthreads")
+include_directories("${DARLING_TOP_DIRECTORY}/kernel/emulation/linux/ext")
+include_directories("${DARLING_TOP_DIRECTORY}/external/libobjc2")
 
-option (DISPATCH_USE_LIBDISPATCH_INIT_CONSTRUCTOR
-    "Use libdispatch_init as a constructor" YES)
-set(USE_LIBDISPATCH_INIT_CONSTRUCTOR
-    ${DISPATCH_USE_LIBDISPATCH_INIT_CONSTRUCTOR})
-#///////////////////////////////////////////////////////////////////////////////
-set (CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -std=gnu99")
-set (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=gnu++98")
-add_definitions(-D_GNU_SOURCE)
+set(CMAKE_C_FLAGS "-nostdinc -fblocks")
+set(CMAKE_SHARED_LINKER_FLAGS "-nostdlib")
 
-if (DISPATCH_SANITIZE)
-  add_definitions(-g -fsanitize=${DISPATCH_SANITIZE})
-  link_libraries(-fsanitize=${DISPATCH_SANITIZE})
-endif ()
+#
+# On Mac OS X, libdispatch_init is automatically invoked during libSystem
+# process initialization.  On other systems, it is tagged as a library
+# constructor to be run by automatically by the runtime linker.
+#
 
-#///////////////////////////////////////////////////////////////////////////////
+set (USE_LIBDISPATCH_INIT_CONSTRUCTOR OFF)
+set (USE_APPLE_TSD_OPTIMIZATIONS ON)
+
+#
+# On Mac OS X libdispatch can use the non-portable direct pthread TSD functions
+#
+option(USE_APPLE_TSD_OPTIMIZATIONS "Use non-portable pthread TSD optimizations for Mac OS X." OFF)
+
+find_program(MIG_EXECUTABLE mig)
+
+################################################################################
+
+#
 # Find libraries we will need
+#
 
-find_package(kqueue REQUIRED)
-find_package(pthread_workqueue)
-find_package(BlocksRuntime)
+set (CBLOCKS_COMPILER_SUPPORT_FOUND ON)
 
-set (HAVE_PTHREAD_WORKQUEUES "${PTHREAD_WORKQUEUE_FOUND}")
-dispatch_search_libs(pthread_workqueue_setdispatch_np LIBRARIES
-    "${PTHREAD_WORKQUEUE_LIBRARIES}")
-
-check_c_compiler_flag(-fblocks COMPILER_HAS_BLOCKS_SUPPORT)
-check_c_compiler_flag("-momit-leaf-frame-pointer"
-    SUPPORTS_MOMIT_LEAF_FRAME_POINTER)
-
-if (NOT COMPILER_HAS_BLOCKS_SUPPORT)
-    message(WARNING "Blocks compiler support was not found; dispatch i/o "
-                    "will not be built.")
+# hack for xnu/bsd/sys/event.h EVFILT_SOCK declaration
+if (EXISTS "${apple_xnu_source_bsd_path}")
+  add_definitions(-DPRIVATE=1)
 endif ()
 
-#///////////////////////////////////////////////////////////////////////////////
-# Find functions and declarations we care about.
+set (HAVE_LIBKERN_OSBYTEORDER_H 1)
+set (HAVE_MACH_ABSOLUTE_TIME 1)
+set (HAVE_PTHREAD_MAIN_NP 1)
+set (HAVE_GETPROGNAME 1)
+set (HAVE_DECL_FD_COPY 1)
+set (HAVE_STRLCPY 1)
+set (HAVE_MACH_MACH_H ON)
+set (HAVE_MACH 1)
+set (USE_MIG ON)
+set (__DARWIN_NON_CANCELABLE 1)
 
-dispatch_check_decls(CLOCK_UPTIME CLOCK_MONOTONIC INCLUDES time.h)
-dispatch_check_decls(NOTE_NONE NOTE_REAP NOTE_SIGNAL NOTE_REVOKE
-    INCLUDES sys/event.h)
-dispatch_check_decls(TAILQ_FOREACH_SAFE INCLUDES sys/queue.h)
-dispatch_check_decls(FD_COPY INCLUDES sys/select.h)
-dispatch_check_decls(SIGEMT INCLUDES signal.h)
-dispatch_check_decls(VQ_UPDATE VQ_VERYLOWDISK INCLUDES sys/mount.h)
-dispatch_check_decls(POSIX_SPAWN_SETEXEC POSIX_SPAWN_START_SUSPENDED
-    INCLUDES sys/spawn.h)
+set (HAVE_PTHREAD_WORKQUEUES 1)
 
-cmake_push_check_state ()
-    set (CMAKE_REQUIRED_DEFINITIONS -D_GNU_SOURCE)
-    dispatch_check_decls(program_invocation_short_name INCLUDES errno.h)
-cmake_pop_check_state ()
 
-dispatch_check_funcs(pthread_key_init_np pthread_main_np
-     sysctlbyname sysconf getprogname
-     strlcpy asprintf)
-
-dispatch_check_headers(sys/cdefs.h unistd.h)
-
-if (HAVE_UNISTD_H AND COMPILER_HAS_BLOCKS_SUPPORT)
-    cmake_push_check_state()
-        set(CMAKE_REQUIRED_DEFINITIONS -D_GNU_SOURCE)
-        set(CMAKE_REQUIRED_FLAGS -fblocks)
-        check_c_source_compiles("#include <unistd.h>\nint main(){}"
-            HAS_WORKING_UNISTD_H)
-    cmake_pop_check_state()
-    if (NOT HAS_WORKING_UNISTD_H)
-        set (HAS_PROBLEMATIC_UNISTD_H 1)
-    endif ()
+if (HAVE_MACH)
+  set (USE_MACH_SEM 1)
+elseif (HAVE_SEM_INIT)
+  set (USE_POSIX_SEM 1)
+else ()
+  message(FATAL_ERROR "no supported semaphore type")
 endif ()
-
-check_c_compiler_flag("-fvisibility=hidden" SUPPORTS_FVISIBILITY_HIDDEN)
-if (SUPPORTS_FVISIBILITY_HIDDEN)
-  set (VISIBILITY_FLAGS "-fvisibility=hidden")
-endif ()
-
-set (USE_FUTEX_SEM 1)
 
 configure_file("config/config.h.cmake.in"
-    "${dispatch_BINARY_DIR}/config/config.h"
-    @ONLY
+  "${dispatch_BINARY_DIR}/config/config.h"
+  @ONLY
 )
 
-#///////////////////////////////////////////////////////////////////////////////
+################################################################################
 
 include_directories(SYSTEM fixincludes)
 
@@ -109,9 +82,8 @@ add_subdirectory(src)
 add_subdirectory(testing)
 
 # Install man pages
-add_subdirectory(man)
+# add_subdirectory(man)
 
 # Install public headers
-add_subdirectory(dispatch)
-add_subdirectory(os)
-
+# add_subdirectory(dispatch) 
+# add_subdirectory(os)

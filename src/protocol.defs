@@ -85,7 +85,7 @@ skip;
 simpleroutine
 wakeup_main_thread(
 					_port	: mach_port_t;
-	WaitTime _waitTimeout	: natural_t
+	WaitTime _waitTimeout	: uintptr_t
 );
 
 simpleroutine
