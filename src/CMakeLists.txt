@@ -13,9 +13,9 @@ set (sources
 if (CBLOCKS_COMPILER_SUPPORT_FOUND)
   list (APPEND sources
     data.c
-    data_additions.c
+	# data_additions.c
     io.c
-    io_additions.c
+	# io_additions.c
     transform.c
   )
 endif ()
