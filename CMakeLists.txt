@@ -10,13 +10,13 @@ if (CMAKE_SYSTEM_NAME MATCHES "Linux")
 endif ()
 
 include_directories("${CMAKE_CURRENT_BINARY_DIR}/src")
-include_directories("${DARLING_TOP_DIRECTORY}/libc/include")
-include_directories("${DARLING_TOP_DIRECTORY}/libc/pthreads")
-include_directories("${DARLING_TOP_DIRECTORY}/kernel/emulation/linux/ext")
-include_directories("${DARLING_TOP_DIRECTORY}/external/libobjc2")
+include_directories("${DARLING_TOP_DIRECTORY}/src/libc/include")
+include_directories("${DARLING_TOP_DIRECTORY}/src/libc/pthreads")
+include_directories("${DARLING_TOP_DIRECTORY}/src/kernel/emulation/linux/ext")
+include_directories("${DARLING_TOP_DIRECTORY}/src/external/libobjc2")
 
 set(CMAKE_C_FLAGS "-nostdinc -fblocks")
-set(CMAKE_SHARED_LINKER_FLAGS "-nostdlib")
+set(CMAKE_SHARED_LINKER_FLAGS "-nostdlib -Wl,--version-script=${DARLING_TOP_DIRECTORY}/darwin.map")
 
 #
 # On Mac OS X, libdispatch_init is automatically invoked during libSystem
