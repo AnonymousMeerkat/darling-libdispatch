@@ -459,6 +459,7 @@ extern struct _dispatch_hw_config_s {
 #endif
 #endif
 #if !TARGET_OS_IPHONE && __MAC_OS_X_VERSION_MIN_REQUIRED < 1080
+#error
 #undef HAVE_PTHREAD_WORKQUEUE_SETDISPATCH_NP
 #define HAVE_PTHREAD_WORKQUEUE_SETDISPATCH_NP 0
 #endif

@@ -15,7 +15,7 @@ include_directories("${DARLING_TOP_DIRECTORY}/src/libc/pthreads")
 include_directories("${DARLING_TOP_DIRECTORY}/src/kernel/emulation/linux/ext")
 include_directories("${DARLING_TOP_DIRECTORY}/src/external/libobjc2")
 
-set(CMAKE_C_FLAGS "-nostdinc -fblocks")
+set(CMAKE_C_FLAGS "-nostdinc -fblocks -ggdb -O0")
 set(CMAKE_SHARED_LINKER_FLAGS "-nostdlib -Wl,--version-script=${DARLING_TOP_DIRECTORY}/darwin.map")
 
 #
@@ -58,8 +58,10 @@ set (HAVE_MACH 1)
 set (USE_MIG ON)
 set (__DARWIN_NON_CANCELABLE 1)
 
+add_definitions(-D__ENVIRONMENT_MAC_OS_X_VERSION_MIN_REQUIRED__=1080)
+add_definitions(-DHAVE_PTHREAD_WORKQUEUES=1)
 set (HAVE_PTHREAD_WORKQUEUES 1)
-
+set (HAVE_PTHREAD_WORKQUEUE_SETDISPATCH_NP 1)
 
 if (HAVE_MACH)
   set (USE_MACH_SEM 1)
