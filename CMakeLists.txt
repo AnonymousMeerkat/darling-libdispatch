@@ -15,7 +15,7 @@ include_directories("${DARLING_TOP_DIRECTORY}/src/libc/pthreads")
 include_directories("${DARLING_TOP_DIRECTORY}/src/kernel/emulation/linux/ext")
 include_directories("${DARLING_TOP_DIRECTORY}/src/external/libobjc2")
 
-set(CMAKE_C_FLAGS "-nostdinc -fblocks -ggdb -O0")
+set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -nostdinc -fblocks -ggdb -O0")
 set(CMAKE_SHARED_LINKER_FLAGS "-nostdlib -Wl,--version-script=${DARLING_TOP_DIRECTORY}/darwin.map")
 
 #
