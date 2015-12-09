@@ -34,11 +34,6 @@
 #define _dispatch_data_retain(x) dispatch_retain(x)
 #define _dispatch_data_release(x) dispatch_release(x)
 
-#ifdef DARLING
-void* __attribute__((weak)) _NSConcreteGlobalBlock;
-void* __attribute__((weak)) _NSConcreteStackBlock;
-#endif
-
 #if DISPATCH_DATA_MOVABLE
 #if DISPATCH_USE_RESOLVERS && !defined(DISPATCH_RESOLVED_VARIANT)
 #error Resolved variant required for movable

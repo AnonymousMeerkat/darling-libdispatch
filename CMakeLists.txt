@@ -13,7 +13,7 @@ include_directories("${CMAKE_CURRENT_BINARY_DIR}/src")
 include_directories("${DARLING_TOP_DIRECTORY}/src/libc/include")
 include_directories("${DARLING_TOP_DIRECTORY}/src/libc/pthreads")
 include_directories("${DARLING_TOP_DIRECTORY}/src/kernel/emulation/linux/ext")
-include_directories("${DARLING_TOP_DIRECTORY}/src/external/libobjc2")
+include_directories("${DARLING_TOP_DIRECTORY}/src/libclosure")
 
 set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -nostdinc -fblocks -ggdb -O0")
 set(CMAKE_SHARED_LINKER_FLAGS "-nostdlib -Wl,--version-script=${DARLING_TOP_DIRECTORY}/darwin.map")

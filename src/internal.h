@@ -162,13 +162,8 @@
 #include <netinet/in.h>
 
 #ifdef __BLOCKS__
-#	ifdef DARLING
-#		include <objc/blocks_private.h>
-#		include <objc/blocks_runtime.h>
-#	else
-#		include <Block_private.h>
-#		include <Block.h>
-#endif
+#	include <Block_private.h>
+#	include <Block.h>
 #endif /* __BLOCKS__ */
 
 #include <assert.h>
