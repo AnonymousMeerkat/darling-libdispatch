@@ -98,14 +98,14 @@ endif ()
 #         -server $*Server.c -sheader $*Server.h $<
 # endif ()
 
-SET(CMAKE_INSTALL_RPATH "${CMAKE_INSTALL_PREFIX}/lib${SUFFIX}/darling")
+SET(CMAKE_INSTALL_RPATH "${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_LIBDIR}/darling")
 SET(CMAKE_BUILD_WITH_INSTALL_RPATH TRUE) 
 SET(CMAKE_INSTALL_RPATH_USE_LINK_PATH TRUE)
 
 # add_library(libdispatch_static STATIC ${sources})
 add_library(libdispatch_shared SHARED ${sources})
 
-install(TARGETS libdispatch_shared DESTINATION lib${SUFFIX}/darling)
+install(TARGETS libdispatch_shared DESTINATION ${CMAKE_INSTALL_LIBDIR}/darling)
 
 #DSAddCompilerFlags(TARGET libdispatch_static libdispatch_shared
 #  FLAGS ${cflags})
