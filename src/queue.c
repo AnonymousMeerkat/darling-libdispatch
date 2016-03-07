@@ -3123,6 +3123,6 @@ dispatch_queue_t
 _dispatch_mgr_thread(dispatch_queue_t dq DISPATCH_UNUSED)
 {
 	// never returns, so burn bridges behind us & clear stack 2k ahead
-	_dispatch_clear_stack(2048);
+	//_dispatch_clear_stack(2048);
 	_dispatch_mgr_invoke();
 }
