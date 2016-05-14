@@ -20,8 +20,8 @@
 
 #include "internal.h"
 #if HAVE_MACH
-#include "protocol.h"
-#include "protocolServer.h"
+#include "../src/protocol.h"
+#include "../src/protocolServer.h"
 #endif
 #include <sys/mount.h>
 

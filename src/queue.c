@@ -20,7 +20,7 @@
 
 #include "internal.h"
 #if HAVE_MACH
-#include "protocol.h"
+#include "../src/protocol.h"
 #endif
 
 #if __linux__
